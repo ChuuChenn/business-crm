@@ -1,0 +1,34 @@
+{
+  "name": "business-crm",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Business CRM \u2014 CRM + POS + Inventory + Workforce + Finance cho b\u00e1n l\u1ebb B2C Vi\u1ec7t Nam",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22.12.0",
+    "pnpm": ">=10"
+  },
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:integration": "turbo run test:integration --concurrency=1",
+    "test:e2e": "pnpm --filter @crm/e2e e2e",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:generate": "pnpm --filter @crm/api prisma:generate",
+    "db:migrate": "pnpm --filter @crm/api prisma:migrate:deploy",
+    "db:migrate:dev": "pnpm --filter @crm/api prisma:migrate:dev",
+    "db:seed": "pnpm --filter @crm/api db:seed",
+    "docs:generate": "pnpm --filter @crm/shared gen:docs && prettier --write docs/security/PERMISSION_MATRIX.md docs/architecture/STATE_MACHINES.generated.md",
+    "infra:up": "docker compose up -d postgres redis rustfs mailpit",
+    "infra:down": "docker compose down"
+  },
+  "devDependencies": {
+    "prettier": "3.9.10",
+    "turbo": "2.11.9",
+    "typescript": "5.9.3"
+  }
+}

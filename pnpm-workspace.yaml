@@ -1,0 +1,18 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+  - 'tests/*'
+
+onlyBuiltDependencies:
+  - '@nestjs/core'
+  - '@prisma/client'
+  - '@prisma/engines'
+  - '@swc/core'
+  - 'esbuild'
+  - 'prisma'
+  - 'sharp'
+  - 'unrs-resolver'
+
+# Vá bảo mật bắc cầu (pnpm audit): GHSA-r3ph-w7gj-g6xm qua @nestjs/swagger.
+overrides:
+  js-yaml@>=5.0.0 <5.4.1: ^5.4.1

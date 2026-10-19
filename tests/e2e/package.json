@@ -1,0 +1,19 @@
+{
+  "name": "@crm/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Ki\u1ec3m th\u1eed E2E (Playwright) tr\u00ean stack th\u1eadt: Next.js + API + PostgreSQL + Redis",
+  "scripts": {
+    "e2e": "playwright test",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@crm/config": "workspace:*",
+    "@playwright/test": "1.64.1",
+    "@types/node": "22.20.5",
+    "dotenv": "17.4.2",
+    "eslint": "9.39.5",
+    "typescript": "5.9.3"
+  }
+}
