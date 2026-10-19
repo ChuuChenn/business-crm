@@ -8,11 +8,10 @@
 ## 1. Đánh giá: **CONDITIONAL GO**
 
 Mọi tiêu chí nghiệm thu bắt buộc của Sprint 0 đạt và đã chạy kiểm thử thực tế (mục 6). Không có lỗi
-Critical/High đang mở. Điều kiện trước khi bắt đầu Sprint 1:
+Critical/High đang mở. CI trên GitHub Actions đã chạy xanh cả 3 job trên PR #1 (commit `48cd04b`).
+Điều kiện còn lại trước khi bắt đầu Sprint 1:
 
-1. **CI trên GitHub chạy xanh** cho PR của sprint này (workflow đã viết nhưng chưa từng chạy trên
-   GitHub Actions tại thời điểm viết báo cáo).
-2. **Chủ doanh nghiệp chốt D-07, D-11, D-12** trong [OPEN_DECISIONS.md](../business-rules/OPEN_DECISIONS.md)
+1. **Chủ doanh nghiệp chốt D-07, D-11, D-12** trong [OPEN_DECISIONS.md](../business-rules/OPEN_DECISIONS.md)
    (MFA bắt buộc cho vai trò nào; Super Admin có xem dữ liệu kinh doanh không; ai được gán vai trò
    Giám đốc). Ba điểm này ảnh hưởng phân quyền nên không tự giả định.
 
@@ -152,14 +151,13 @@ Các kiểm thử quan trọng đã có:
 
 ## 8. Lỗi và hạn chế còn tồn tại
 
-| Mức    | Vấn đề                                                                                                                    | Kế hoạch                                                                       |
-| ------ | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| Medium | Workflow CI chưa chạy trên GitHub Actions                                                                                 | Theo dõi trên PR; là điều kiện GO                                              |
-| Low    | Image API 763 MB (pnpm deploy `--legacy` kéo theo nhiều file), image migrate 2,5 GB                                       | Tối ưu Sprint 1: bundle API, image migrate riêng chỉ có Prisma CLI             |
-| Low    | RustFS và Mailpit chưa được khởi động thử trong môi trường này (Docker Hub giới hạn lượt tải 429); API chưa dùng S3/email | Khởi động thử khi cần (Sprint 1 email quên mật khẩu, Sprint 2 nhập/xuất Excel) |
-| Low    | Rate limit lưu trong bộ nhớ (một instance)                                                                                | Chuyển Redis store nếu chạy nhiều instance API                                 |
-| Low    | Môi trường này có Chromium khác phiên bản Playwright → E2E chạy bằng `PLAYWRIGHT_CHROMIUM_EXECUTABLE`                     | CI tự cài trình duyệt đúng phiên bản                                           |
-| Info   | Build Docker trong mạng có proxy TLS cần `--secret id=extra_ca,...`                                                       | Đã hỗ trợ tùy chọn trong Dockerfile                                            |
+| Mức  | Vấn đề                                                                                                                    | Kế hoạch                                                                       |
+| ---- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Low  | Image API 763 MB (pnpm deploy `--legacy` kéo theo nhiều file), image migrate 2,5 GB                                       | Tối ưu Sprint 1: bundle API, image migrate riêng chỉ có Prisma CLI             |
+| Low  | RustFS và Mailpit chưa được khởi động thử trong môi trường này (Docker Hub giới hạn lượt tải 429); API chưa dùng S3/email | Khởi động thử khi cần (Sprint 1 email quên mật khẩu, Sprint 2 nhập/xuất Excel) |
+| Low  | Rate limit lưu trong bộ nhớ (một instance)                                                                                | Chuyển Redis store nếu chạy nhiều instance API                                 |
+| Low  | Môi trường này có Chromium khác phiên bản Playwright → E2E chạy bằng `PLAYWRIGHT_CHROMIUM_EXECUTABLE`                     | CI tự cài trình duyệt đúng phiên bản                                           |
+| Info | Build Docker trong mạng có proxy TLS cần `--secret id=extra_ca,...`                                                       | Đã hỗ trợ tùy chọn trong Dockerfile                                            |
 
 ## 9. Rủi ro kỹ thuật
 
