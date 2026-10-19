@@ -47,7 +47,11 @@ export async function seedReferenceData(prisma: PrismaClient): Promise<SeedResul
         directorOnly: def.directorOnly ?? false,
         sensitive: def.sensitive ?? false,
       };
-      await tx.permission.upsert({ where: { key: def.key }, create: { key: def.key, ...data }, update: data });
+      await tx.permission.upsert({
+        where: { key: def.key },
+        create: { key: def.key, ...data },
+        update: data,
+      });
       if (existingPermissionKeys.has(def.key)) permissionsUpdated++;
       else permissionsCreated++;
     }
@@ -58,9 +62,8 @@ export async function seedReferenceData(prisma: PrismaClient): Promise<SeedResul
       let roleId = existingRoles.get(code);
       const isNewRole = roleId === undefined;
       if (isNewRole) {
-        roleId = (
-          await tx.role.create({ data: { code, name: ROLE_LABELS[code], isSystem: true } })
-        ).id;
+        roleId = (await tx.role.create({ data: { code, name: ROLE_LABELS[code], isSystem: true } }))
+          .id;
         rolesCreated++;
       }
       const grants = Object.entries(DEFAULT_ROLE_GRANTS[code]) as [string, Scope][];
@@ -68,7 +71,11 @@ export async function seedReferenceData(prisma: PrismaClient): Promise<SeedResul
       for (const [key, scope] of toCreate) validateGrant(code, key, scope);
       if (toCreate.length > 0) {
         const res = await tx.rolePermission.createMany({
-          data: toCreate.map(([permissionKey, scope]) => ({ roleId: roleId!, permissionKey, scope })),
+          data: toCreate.map(([permissionKey, scope]) => ({
+            roleId: roleId!,
+            permissionKey,
+            scope,
+          })),
           skipDuplicates: true,
         });
         grantsCreated += res.count;

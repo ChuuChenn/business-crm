@@ -13,7 +13,9 @@ export default async function setup(): Promise<void> {
   if (!url) throw new Error('Thiếu TEST_DATABASE_URL cho kiểm thử tích hợp');
   const dbName = new URL(url).pathname.replace(/^\//, '');
   if (!dbName.endsWith('_test')) {
-    throw new Error(`Từ chối chạy test tích hợp trên database "${dbName}" (tên phải kết thúc bằng _test)`);
+    throw new Error(
+      `Từ chối chạy test tích hợp trên database "${dbName}" (tên phải kết thúc bằng _test)`,
+    );
   }
 
   const client = new Client({ connectionString: url });

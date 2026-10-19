@@ -1,4 +1,10 @@
-import { PERMISSIONS, SCOPE_RANK, getPermission, type PermissionKey, type Scope } from './permissions';
+import {
+  PERMISSIONS,
+  SCOPE_RANK,
+  getPermission,
+  type PermissionKey,
+  type Scope,
+} from './permissions';
 import { ROLE_CODES, type RoleCode } from './roles';
 
 /**
@@ -12,7 +18,10 @@ export type RoleGrants = Partial<Record<PermissionKey, Scope>>;
 
 const all = (scope: Scope, exclude: PermissionKey[] = []): RoleGrants =>
   Object.fromEntries(
-    PERMISSIONS.filter((d) => !exclude.includes(d.key)).map((d) => [d.key, d.scoped ? scope : 'ORG']),
+    PERMISSIONS.filter((d) => !exclude.includes(d.key)).map((d) => [
+      d.key,
+      d.scoped ? scope : 'ORG',
+    ]),
   ) as RoleGrants;
 
 const grant = (scope: Scope, keys: PermissionKey[]): RoleGrants =>

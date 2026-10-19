@@ -11,9 +11,7 @@
           }
         },
         "summary": "Liveness: tiến trình API đang chạy",
-        "tags": [
-          "health"
-        ]
+        "tags": ["health"]
       }
     },
     "/api/v1/health/ready": {
@@ -29,9 +27,7 @@
           }
         },
         "summary": "Readiness: kết nối PostgreSQL và Redis",
-        "tags": [
-          "health"
-        ]
+        "tags": ["health"]
       }
     }
   },

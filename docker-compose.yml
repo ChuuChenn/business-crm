@@ -1,6 +1,6 @@
 # Business CRM — môi trường phát triển cục bộ.
 #
-#   docker compose up -d postgres redis minio mailpit   # chỉ hạ tầng, chạy app bằng pnpm dev
+#   docker compose up -d postgres redis rustfs mailpit   # chỉ hạ tầng, chạy app bằng pnpm dev
 #   docker compose --profile app up -d --build          # toàn bộ stack sau reverse proxy
 #
 # Mật khẩu ở đây CHỈ dành cho môi trường dev cục bộ, lấy từ .env (xem .env.example).
@@ -30,7 +30,14 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    command: ['redis-server', '--appendonly', 'yes', '--requirepass', '${REDIS_PASSWORD:?Đặt REDIS_PASSWORD trong .env}']
+    command:
+      [
+        'redis-server',
+        '--appendonly',
+        'yes',
+        '--requirepass',
+        '${REDIS_PASSWORD:?Đặt REDIS_PASSWORD trong .env}',
+      ]
     ports:
       - '${REDIS_PORT:-6379}:6379'
     volumes:
@@ -44,31 +51,39 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
 
   # S3-compatible storage (tệp đính kèm, file Excel nhập/xuất, backup).
-  minio:
-    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+  # MinIO đã ngừng phát hành image cộng đồng trên Docker Hub (2025) → dùng RustFS (Apache-2.0,
+  # tương thích API S3). Ứng dụng chỉ dùng API S3 chuẩn nên có thể thay bằng dịch vụ S3 bất kỳ.
+  rustfs:
+    image: rustfs/rustfs:1.0.3
     restart: unless-stopped
-    command: ['server', '/data', '--console-address', ':9001']
     environment:
-      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-crm-dev}
-      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:?Đặt S3_SECRET_KEY trong .env}
+      RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY:-crm-dev}
+      RUSTFS_SECRET_KEY: ${S3_SECRET_KEY:?Đặt S3_SECRET_KEY trong .env}
+      RUSTFS_CONSOLE_ENABLE: 'true'
     ports:
-      - '${MINIO_PORT:-9000}:9000'
-      - '${MINIO_CONSOLE_PORT:-9001}:9001'
+      - '${S3_PORT:-9000}:9000'
+      - '${S3_CONSOLE_PORT:-9001}:9001'
     volumes:
-      - minio-data:/data
-    healthcheck:
-      test: ['CMD', 'mc', 'ready', 'local']
-      interval: 10s
-      timeout: 5s
-      retries: 10
+      - s3-data:/data
 
   # Bắt email dev (quên mật khẩu, thông báo) — không gửi ra ngoài.
   mailpit:
-    image: axllent/mailpit:v1.27
+    image: axllent/mailpit:v1.31
     restart: unless-stopped
     ports:
       - '${MAILPIT_SMTP_PORT:-1025}:1025'
       - '${MAILPIT_UI_PORT:-8025}:8025'
+
+  migrate:
+    profiles: ['app']
+    build:
+      context: .
+      dockerfile: infrastructure/docker/api.Dockerfile
+      target: migrate
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-crm}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-crm_dev}?schema=public
+    depends_on:
+      postgres: { condition: service_healthy }
 
   api:
     profiles: ['app']
@@ -77,17 +92,26 @@ services:
       dockerfile: infrastructure/docker/api.Dockerfile
     restart: unless-stopped
     environment:
-      NODE_ENV: production
+      # Mặc định production: API từ chối khởi động nếu .env còn mật khẩu mẫu/dev.
+      # Thử nghiệm toàn stack cục bộ với mật khẩu dev: APP_NODE_ENV=test docker compose --profile app up
+      NODE_ENV: ${APP_NODE_ENV:-production}
       PORT: 4000
       DATABASE_URL: postgresql://${POSTGRES_USER:-crm}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-crm_dev}?schema=public
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
       CORS_ORIGINS: ${PUBLIC_ORIGIN:-http://localhost:8080}
+      TRUST_PROXY_HOPS: 1
       LOG_LEVEL: ${LOG_LEVEL:-info}
     depends_on:
-      postgres: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
       redis: { condition: service_healthy }
     healthcheck:
-      test: ['CMD', 'node', '-e', "fetch('http://localhost:4000/api/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:4000/api/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -125,5 +149,5 @@ services:
 volumes:
   postgres-data:
   redis-data:
-  minio-data:
+  s3-data:
   caddy-data:

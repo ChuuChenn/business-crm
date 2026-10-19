@@ -15,7 +15,10 @@ async function timed(check: () => Promise<unknown>): Promise<DependencyStatus> {
     await Promise.race([
       check(),
       new Promise((_, reject) => {
-        timer = setTimeout(() => reject(new Error(`timeout sau ${CHECK_TIMEOUT_MS}ms`)), CHECK_TIMEOUT_MS);
+        timer = setTimeout(
+          () => reject(new Error(`timeout sau ${CHECK_TIMEOUT_MS}ms`)),
+          CHECK_TIMEOUT_MS,
+        );
       }),
     ]);
     return { status: 'up', latencyMs: Math.round(performance.now() - started) };

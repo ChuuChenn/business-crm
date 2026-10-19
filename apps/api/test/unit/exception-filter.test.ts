@@ -1,12 +1,22 @@
-import { BadRequestException, ConflictException, ForbiddenException, HttpException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  HttpException,
+} from '@nestjs/common';
 import { describe, expect, it } from 'vitest';
 import { mapException } from '../../src/common/filters/all-exceptions.filter';
 import { Prisma } from '../../src/generated/prisma/client';
 
 describe('mapException', () => {
   it('giữ mã lỗi nghiệp vụ tùy chỉnh', () => {
-    const r = mapException(new ConflictException({ code: 'VERSION_CONFLICT', message: 'Đơn đã bị sửa' }));
-    expect(r).toEqual({ status: 409, body: { code: 'VERSION_CONFLICT', message: 'Đơn đã bị sửa' } });
+    const r = mapException(
+      new ConflictException({ code: 'VERSION_CONFLICT', message: 'Đơn đã bị sửa' }),
+    );
+    expect(r).toEqual({
+      status: 409,
+      body: { code: 'VERSION_CONFLICT', message: 'Đơn đã bị sửa' },
+    });
   });
 
   it('dùng mã mặc định theo HTTP status', () => {
@@ -25,7 +35,10 @@ describe('mapException', () => {
       code: 'P2002',
       clientVersion: 'test',
     });
-    expect(mapException(err)).toEqual({ status: 409, body: { code: 'UNIQUE_VIOLATION', message: 'Dữ liệu đã tồn tại' } });
+    expect(mapException(err)).toEqual({
+      status: 409,
+      body: { code: 'UNIQUE_VIOLATION', message: 'Dữ liệu đã tồn tại' },
+    });
   });
 
   it('lỗi không xác định → 500 và không lộ thông điệp nội bộ', () => {

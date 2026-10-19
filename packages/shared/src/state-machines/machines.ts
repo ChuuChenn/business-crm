@@ -245,7 +245,12 @@ export const stockUnitMachine = defineMachine({
   initial: ['AVAILABLE'],
   terminal: ['WRITTEN_OFF'],
   transitions: [
-    { event: 'RESERVE', from: ['AVAILABLE'], to: 'RESERVED', description: 'Giữ cho đơn đã xác nhận.' },
+    {
+      event: 'RESERVE',
+      from: ['AVAILABLE'],
+      to: 'RESERVED',
+      description: 'Giữ cho đơn đã xác nhận.',
+    },
     { event: 'RELEASE', from: ['RESERVED'], to: 'AVAILABLE', description: 'Nhả giữ khi hủy đơn.' },
     {
       event: 'ISSUE',
@@ -265,7 +270,8 @@ export const stockUnitMachine = defineMachine({
       from: ['RETURNED_PENDING_INSPECTION'],
       to: 'AVAILABLE',
       permission: 'inventory.status.change',
-      description: 'Kiểm tra đạt, nhập lại tồn bán (có thể đổi tình trạng sang hàng đã qua sử dụng).',
+      description:
+        'Kiểm tra đạt, nhập lại tồn bán (có thể đổi tình trạng sang hàng đã qua sử dụng).',
     },
     {
       event: 'MARK_DEFECTIVE',
@@ -511,11 +517,41 @@ export const leadMachine = defineMachine({
   initial: ['NEW'],
   terminal: ['WON'],
   transitions: [
-    { event: 'ASSIGN', from: ['NEW', 'ASSIGNED'], to: 'ASSIGNED', permission: 'lead.assign', description: 'Phân công / phân công lại.' },
-    { event: 'CONTACT', from: ['ASSIGNED'], to: 'CONTACTED', permission: 'lead.update', description: 'Đã liên hệ lần đầu.' },
-    { event: 'QUALIFY', from: ['CONTACTED'], to: 'QUALIFIED', permission: 'lead.update', description: 'Xác định có nhu cầu thật.' },
-    { event: 'QUOTE', from: ['QUALIFIED', 'NEGOTIATING'], to: 'QUOTED', permission: 'lead.update', description: 'Gửi báo giá.' },
-    { event: 'NEGOTIATE', from: ['QUOTED'], to: 'NEGOTIATING', permission: 'lead.update', description: 'Thương lượng.' },
+    {
+      event: 'ASSIGN',
+      from: ['NEW', 'ASSIGNED'],
+      to: 'ASSIGNED',
+      permission: 'lead.assign',
+      description: 'Phân công / phân công lại.',
+    },
+    {
+      event: 'CONTACT',
+      from: ['ASSIGNED'],
+      to: 'CONTACTED',
+      permission: 'lead.update',
+      description: 'Đã liên hệ lần đầu.',
+    },
+    {
+      event: 'QUALIFY',
+      from: ['CONTACTED'],
+      to: 'QUALIFIED',
+      permission: 'lead.update',
+      description: 'Xác định có nhu cầu thật.',
+    },
+    {
+      event: 'QUOTE',
+      from: ['QUALIFIED', 'NEGOTIATING'],
+      to: 'QUOTED',
+      permission: 'lead.update',
+      description: 'Gửi báo giá.',
+    },
+    {
+      event: 'NEGOTIATE',
+      from: ['QUOTED'],
+      to: 'NEGOTIATING',
+      permission: 'lead.update',
+      description: 'Thương lượng.',
+    },
     {
       event: 'WIN',
       from: ['QUOTED', 'NEGOTIATING'],
@@ -532,7 +568,13 @@ export const leadMachine = defineMachine({
       guards: ['lostReasonProvided'],
       description: 'Thất bại, bắt buộc lý do.',
     },
-    { event: 'REOPEN', from: ['LOST'], to: 'ASSIGNED', permission: 'lead.reopen', description: 'Mở lại lead.' },
+    {
+      event: 'REOPEN',
+      from: ['LOST'],
+      to: 'ASSIGNED',
+      permission: 'lead.reopen',
+      description: 'Mở lại lead.',
+    },
   ],
 });
 
@@ -551,10 +593,34 @@ export const taskMachine = defineMachine({
   initial: ['TODO'],
   terminal: ['DONE', 'CANCELLED'],
   transitions: [
-    { event: 'START', from: ['TODO', 'BLOCKED'], to: 'IN_PROGRESS', permission: 'task.update', description: 'Bắt đầu làm.' },
-    { event: 'BLOCK', from: ['IN_PROGRESS'], to: 'BLOCKED', permission: 'task.update', description: 'Bị chặn, ghi lý do.' },
-    { event: 'COMPLETE', from: ['IN_PROGRESS'], to: 'DONE', permission: 'task.update', description: 'Hoàn thành.' },
-    { event: 'CANCEL', from: ['TODO', 'IN_PROGRESS', 'BLOCKED'], to: 'CANCELLED', permission: 'task.create', description: 'Người giao việc hủy.' },
+    {
+      event: 'START',
+      from: ['TODO', 'BLOCKED'],
+      to: 'IN_PROGRESS',
+      permission: 'task.update',
+      description: 'Bắt đầu làm.',
+    },
+    {
+      event: 'BLOCK',
+      from: ['IN_PROGRESS'],
+      to: 'BLOCKED',
+      permission: 'task.update',
+      description: 'Bị chặn, ghi lý do.',
+    },
+    {
+      event: 'COMPLETE',
+      from: ['IN_PROGRESS'],
+      to: 'DONE',
+      permission: 'task.update',
+      description: 'Hoàn thành.',
+    },
+    {
+      event: 'CANCEL',
+      from: ['TODO', 'IN_PROGRESS', 'BLOCKED'],
+      to: 'CANCELLED',
+      permission: 'task.create',
+      description: 'Người giao việc hủy.',
+    },
   ],
 });
 

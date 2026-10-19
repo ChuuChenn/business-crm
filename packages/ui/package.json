@@ -1,0 +1,35 @@
+{
+  "name": "@crm/ui",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Th\u00e0nh ph\u1ea7n giao di\u1ec7n d\u00f9ng chung (shadcn/ui tr\u00ean Radix + Tailwind CSS v4)",
+  "exports": {
+    "./lib/utils": "./src/lib/utils.ts",
+    "./components/*": "./src/components/*.tsx"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "lucide-react": "1.59.0",
+    "radix-ui": "1.8.1",
+    "tailwind-merge": "3.7.0"
+  },
+  "peerDependencies": {
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "devDependencies": {
+    "@crm/config": "workspace:*",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "eslint": "9.39.5",
+    "globals": "16.4.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "typescript": "5.9.3"
+  }
+}

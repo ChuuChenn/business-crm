@@ -1,0 +1,11 @@
+{
+  "extends": "@crm/config/tsconfig/base.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "lib": ["ES2023", "DOM"],
+    "types": ["node"]
+  },
+  "include": ["specs", "playwright.config.ts"]
+}

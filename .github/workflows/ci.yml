@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NEXT_TELEMETRY_DISABLED: '1'
+  TURBO_TELEMETRY_DISABLED: '1'
+  # Chỉ dùng cho service container tạm của CI, không phải secret thật.
+  DATABASE_URL: postgresql://crm:ci_password@localhost:5432/crm_ci?schema=public
+  TEST_DATABASE_URL: postgresql://crm:ci_password@localhost:5432/crm_test?schema=public
+  REDIS_URL: redis://localhost:6379/0
+
+jobs:
+  verify:
+    name: Lint · Typecheck · Unit · Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+      - name: Kiểm tra tài liệu sinh tự động không bị lệch so với mã nguồn
+        run: |
+          pnpm docs:generate
+          git diff --exit-code -- docs/
+
+  integration-e2e:
+    name: Integration (PostgreSQL + Redis thật) · E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: crm
+          POSTGRES_PASSWORD: ci_password
+          POSTGRES_DB: crm_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U crm -d crm_ci" --health-interval 5s --health-timeout 3s --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 3s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Tạo database kiểm thử
+        run: PGPASSWORD=ci_password psql -h localhost -U crm -d crm_ci -c 'CREATE DATABASE crm_test'
+      - run: pnpm build
+      - name: Kiểm thử tích hợp
+        run: pnpm test:integration
+      - name: Migration + dữ liệu tham chiếu cho E2E
+        run: |
+          pnpm db:migrate
+          pnpm db:seed
+      - name: Kiểm tra schema Prisma khớp migration (không drift)
+        working-directory: apps/api
+        run: pnpm exec prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
+      - run: pnpm --filter @crm/e2e exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: tests/e2e/playwright-report
+          retention-days: 7
+
+  docker:
+    name: Build Docker images
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f infrastructure/docker/api.Dockerfile -t crm-api:ci .
+      - run: docker build -f infrastructure/docker/web.Dockerfile -t crm-web:ci .

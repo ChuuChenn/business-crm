@@ -33,7 +33,8 @@ export function loggerParams(config: AppConfig): Params {
       redact: { paths: REDACT_PATHS, censor: '[REDACTED]' },
       genReqId: (req: IncomingMessage, res) => {
         const incoming = req.headers['x-request-id'];
-        const id = typeof incoming === 'string' && REQUEST_ID_RE.test(incoming) ? incoming : randomUUID();
+        const id =
+          typeof incoming === 'string' && REQUEST_ID_RE.test(incoming) ? incoming : randomUUID();
         res.setHeader('x-request-id', id);
         return id;
       },

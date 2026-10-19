@@ -32,9 +32,13 @@ describe('Health API (PostgreSQL + Redis thật)', () => {
   });
 
   it('trả x-request-id; giữ id hợp lệ client gửi, thay id không hợp lệ', async () => {
-    const own = await request(app.getHttpServer()).get('/api/v1/health').set('x-request-id', 'req-12345678');
+    const own = await request(app.getHttpServer())
+      .get('/api/v1/health')
+      .set('x-request-id', 'req-12345678');
     expect(own.headers['x-request-id']).toBe('req-12345678');
-    const bad = await request(app.getHttpServer()).get('/api/v1/health').set('x-request-id', '<script>');
+    const bad = await request(app.getHttpServer())
+      .get('/api/v1/health')
+      .set('x-request-id', '<script>');
     expect(bad.headers['x-request-id']).toMatch(/^[0-9a-f-]{36}$/);
   });
 

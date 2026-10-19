@@ -39,7 +39,9 @@ export const PERMISSIONS = [
   p('user.lock', 'system', 'Khóa/mở khóa tài khoản', { sensitive: true }),
   p('user.session.revoke', 'system', 'Thu hồi phiên đăng nhập', { sensitive: true }),
   p('role.read', 'system', 'Xem vai trò và ma trận quyền'),
-  p('role.manage', 'system', 'Gán quyền cho vai trò, gán vai trò cho nhân viên', { sensitive: true }),
+  p('role.manage', 'system', 'Gán quyền cho vai trò, gán vai trò cho nhân viên', {
+    sensitive: true,
+  }),
   p('audit.read', 'system', 'Xem nhật ký hành động và nhật ký truy cập', { scoped: true }),
 
   // Khách hàng
@@ -77,7 +79,9 @@ export const PERMISSIONS = [
   p('product.read', 'product', 'Xem sản phẩm và giá bán'),
   p('product.manage', 'product', 'Tạo/sửa sản phẩm, danh mục, biến thể'),
   p('product.cost.read', 'product', 'Xem giá vốn', { sensitive: true }),
-  p('product.price.manage', 'product', 'Đặt giá bán đề xuất, giá sàn, thuế suất', { sensitive: true }),
+  p('product.price.manage', 'product', 'Đặt giá bán đề xuất, giá sàn, thuế suất', {
+    sensitive: true,
+  }),
   p('price_exception.request', 'product', 'Tạo yêu cầu bán dưới giá sàn', { scoped: true }),
   p('price_exception.approve', 'product', 'Phê duyệt/từ chối bán dưới giá sàn', {
     directorOnly: true,

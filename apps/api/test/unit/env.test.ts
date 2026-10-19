@@ -15,10 +15,9 @@ describe('loadConfig', () => {
   });
 
   it('tách danh sách CORS', () => {
-    expect(loadConfig({ ...base, CORS_ORIGINS: 'https://a.vn, https://b.vn' }).CORS_ORIGINS).toEqual([
-      'https://a.vn',
-      'https://b.vn',
-    ]);
+    expect(
+      loadConfig({ ...base, CORS_ORIGINS: 'https://a.vn, https://b.vn' }).CORS_ORIGINS,
+    ).toEqual(['https://a.vn', 'https://b.vn']);
   });
 
   it('báo lỗi khi thiếu DATABASE_URL và không lộ giá trị secret', () => {

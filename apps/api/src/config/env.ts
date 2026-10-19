@@ -19,7 +19,9 @@ export const envSchema = z
           .map((x) => x.trim())
           .filter(Boolean),
       ),
-    LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
+    LOG_LEVEL: z
+      .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
+      .default('info'),
     /** Số proxy tin cậy phía trước API (Caddy = 1) để lấy đúng IP client cho rate limit/log. */
     TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(0),
     RATE_LIMIT_TTL_MS: z.coerce.number().int().positive().default(60_000),

@@ -71,7 +71,10 @@ export function assertTransition<S extends string, E extends string>(
   return t;
 }
 
-export function allowedEvents<S extends string, E extends string>(m: MachineDef<S, E>, from: S): E[] {
+export function allowedEvents<S extends string, E extends string>(
+  m: MachineDef<S, E>,
+  from: S,
+): E[] {
   return m.transitions.filter((t) => t.from.includes(from)).map((t) => t.event);
 }
 

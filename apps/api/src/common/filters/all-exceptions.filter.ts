@@ -32,24 +32,36 @@ export function mapException(exception: unknown): Mapped {
   if (exception instanceof HttpException) {
     const status = exception.getStatus();
     const res = exception.getResponse();
-    const fromObject = typeof res === 'object' && res !== null ? (res as Record<string, unknown>) : {};
-    const code = typeof fromObject['code'] === 'string' ? fromObject['code'] : (STATUS_CODES[status] ?? 'ERROR');
+    const fromObject =
+      typeof res === 'object' && res !== null ? (res as Record<string, unknown>) : {};
+    const code =
+      typeof fromObject['code'] === 'string'
+        ? fromObject['code']
+        : (STATUS_CODES[status] ?? 'ERROR');
     const message =
       typeof res === 'string'
         ? res
         : typeof fromObject['message'] === 'string'
           ? fromObject['message']
           : exception.message;
-    const details = fromObject['details'] ?? (Array.isArray(fromObject['message']) ? fromObject['message'] : undefined);
+    const details =
+      fromObject['details'] ??
+      (Array.isArray(fromObject['message']) ? fromObject['message'] : undefined);
     return { status, body: { code, message, ...(details !== undefined ? { details } : {}) } };
   }
 
   if (exception instanceof Prisma.PrismaClientKnownRequestError) {
     if (exception.code === 'P2002') {
-      return { status: HttpStatus.CONFLICT, body: { code: 'UNIQUE_VIOLATION', message: 'Dữ liệu đã tồn tại' } };
+      return {
+        status: HttpStatus.CONFLICT,
+        body: { code: 'UNIQUE_VIOLATION', message: 'Dữ liệu đã tồn tại' },
+      };
     }
     if (exception.code === 'P2025') {
-      return { status: HttpStatus.NOT_FOUND, body: { code: 'NOT_FOUND', message: 'Không tìm thấy dữ liệu' } };
+      return {
+        status: HttpStatus.NOT_FOUND,
+        body: { code: 'NOT_FOUND', message: 'Không tìm thấy dữ liệu' },
+      };
     }
   }
 
@@ -75,7 +87,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
         'Unhandled exception',
       );
     }
-    const payload: ApiError = { error: { ...body, ...(req.id ? { requestId: String(req.id) } : {}) } };
+    const payload: ApiError = {
+      error: { ...body, ...(req.id ? { requestId: String(req.id) } : {}) },
+    };
     res.status(status).json(payload);
   }
 }

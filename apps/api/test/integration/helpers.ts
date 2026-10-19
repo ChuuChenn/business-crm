@@ -7,7 +7,8 @@ config({ path: resolve(__dirname, '../../../../.env'), quiet: true });
 
 export function testDatabaseUrl(): string {
   const url = process.env['TEST_DATABASE_URL'];
-  if (!url || !new URL(url).pathname.endsWith('_test')) throw new Error('TEST_DATABASE_URL không hợp lệ');
+  if (!url || !new URL(url).pathname.endsWith('_test'))
+    throw new Error('TEST_DATABASE_URL không hợp lệ');
   return url;
 }
 

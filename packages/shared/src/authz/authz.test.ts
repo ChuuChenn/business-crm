@@ -50,13 +50,19 @@ describe('ma trận quyền mặc định', () => {
   });
 
   it('từ chối gán quyền chỉ-giám-đốc cho vai trò khác, kể cả Super Admin', () => {
-    expect(() => validateGrant('SUPER_ADMIN', 'refund.approve', 'ORG')).toThrow(GrantViolationError);
-    expect(() => validateGrant('WAREHOUSE', 'inventory.adjust', 'ORG')).toThrow(GrantViolationError);
+    expect(() => validateGrant('SUPER_ADMIN', 'refund.approve', 'ORG')).toThrow(
+      GrantViolationError,
+    );
+    expect(() => validateGrant('WAREHOUSE', 'inventory.adjust', 'ORG')).toThrow(
+      GrantViolationError,
+    );
     expect(() => validateGrant('DIRECTOR', 'inventory.adjust', 'ORG')).not.toThrow();
   });
 
   it('từ chối quyền không tồn tại và phạm vi sai', () => {
-    expect(() => validateGrant('SALES', 'order.delete_everything', 'ORG')).toThrow(GrantViolationError);
+    expect(() => validateGrant('SALES', 'order.delete_everything', 'ORG')).toThrow(
+      GrantViolationError,
+    );
     expect(() => validateGrant('SALES', 'order.create', 'OWN')).toThrow(GrantViolationError);
   });
 

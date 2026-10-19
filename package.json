@@ -2,7 +2,7 @@
   "name": "business-crm",
   "version": "0.1.0",
   "private": true,
-  "description": "Business CRM — CRM + POS + Inventory + Workforce + Finance cho bán lẻ B2C Việt Nam",
+  "description": "Business CRM \u2014 CRM + POS + Inventory + Workforce + Finance cho b\u00e1n l\u1ebb B2C Vi\u1ec7t Nam",
   "packageManager": "pnpm@10.28.0",
   "engines": {
     "node": ">=22.12.0",
@@ -15,15 +15,15 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "test:integration": "turbo run test:integration --concurrency=1",
-    "test:e2e": "pnpm --filter @crm/e2e test",
+    "test:e2e": "pnpm --filter @crm/e2e e2e",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "db:generate": "pnpm --filter @crm/api prisma:generate",
     "db:migrate": "pnpm --filter @crm/api prisma:migrate:deploy",
     "db:migrate:dev": "pnpm --filter @crm/api prisma:migrate:dev",
     "db:seed": "pnpm --filter @crm/api db:seed",
-    "docs:permissions": "pnpm --filter @crm/shared gen:permission-doc",
-    "infra:up": "docker compose up -d postgres redis minio mailpit",
+    "docs:generate": "pnpm --filter @crm/shared gen:docs && prettier --write docs/security/PERMISSION_MATRIX.md docs/architecture/STATE_MACHINES.generated.md",
+    "infra:up": "docker compose up -d postgres redis rustfs mailpit",
     "infra:down": "docker compose down"
   },
   "devDependencies": {

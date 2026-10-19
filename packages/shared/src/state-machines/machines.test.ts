@@ -74,7 +74,9 @@ describe.each(ALL_MACHINES.map((m) => [m.id, m] as const))('state machine %s', (
 describe('quy tắc nghiệp vụ trên state machine', () => {
   it('đơn nháp chỉ xác nhận được qua CONFIRM và đơn đã hoàn tất không thể hủy', () => {
     expect(assertTransition(orderMachine, 'DRAFT', 'CONFIRM').to).toBe('CONFIRMED');
-    expect(() => assertTransition(orderMachine, 'COMPLETED', 'CANCEL')).toThrow(InvalidTransitionError);
+    expect(() => assertTransition(orderMachine, 'COMPLETED', 'CANCEL')).toThrow(
+      InvalidTransitionError,
+    );
     expect(canTransition(orderMachine, 'ISSUED', 'CANCEL')).toBe(false);
   });
 
@@ -88,7 +90,9 @@ describe('quy tắc nghiệp vụ trên state machine', () => {
     expect(assertTransition(priceExceptionMachine, 'PENDING', 'APPROVE').permission).toBe(
       'price_exception.approve',
     );
-    expect(assertTransition(priceExceptionMachine, 'APPROVED', 'INVALIDATE').to).toBe('INVALIDATED');
+    expect(assertTransition(priceExceptionMachine, 'APPROVED', 'INVALIDATE').to).toBe(
+      'INVALIDATED',
+    );
     expect(canTransition(priceExceptionMachine, 'CONSUMED', 'APPROVE')).toBe(false);
     expect(canTransition(priceExceptionMachine, 'EXPIRED', 'CONSUME')).toBe(false);
   });
@@ -107,8 +111,12 @@ describe('quy tắc nghiệp vụ trên state machine', () => {
   });
 
   it('hoàn tiền: duyệt và thực hiện chỉ bằng quyền giám đốc; thất bại không thành công', () => {
-    expect(assertTransition(refundMachine, 'REQUESTED', 'APPROVE').permission).toBe('refund.approve');
-    expect(assertTransition(refundMachine, 'APPROVED', 'EXECUTE').permission).toBe('refund.execute');
+    expect(assertTransition(refundMachine, 'REQUESTED', 'APPROVE').permission).toBe(
+      'refund.approve',
+    );
+    expect(assertTransition(refundMachine, 'APPROVED', 'EXECUTE').permission).toBe(
+      'refund.execute',
+    );
     expect(canTransition(refundMachine, 'REQUESTED', 'SUCCEED')).toBe(false);
     expect(canTransition(refundMachine, 'FAILED', 'SUCCEED')).toBe(false);
   });
