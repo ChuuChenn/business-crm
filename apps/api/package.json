@@ -14,7 +14,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
-    "db:seed": "node dist/prisma/seed.js",
+    "db:seed": "node dist/database/seed.js",
     "openapi:export": "node dist/scripts/export-openapi.js"
   },
   "dependencies": {
