@@ -1,0 +1,349 @@
+// Business CRM — schema nền tảng (Sprint 0).
+//
+// Quy ước:
+// - Bảng/cột snake_case (@@map/@map), model PascalCase.
+// - Khóa chính UUID v7 (sắp xếp theo thời gian), trừ bảng log dùng BIGINT identity.
+// - Thời gian luôn là timestamptz (UTC); hiển thị theo Asia/Ho_Chi_Minh.
+// - Tiền (từ Sprint 3) là BIGINT đồng VND; tỷ lệ là INT basis point. Không dùng float.
+// - Bảng có thể sửa đồng thời có cột `version` cho optimistic locking.
+// - Ràng buộc mà Prisma không biểu diễn được (CHECK, trigger, NULLS NOT DISTINCT, index
+//   biểu thức) nằm trong migration SQL và được kiểm thử tích hợp.
+// Thiết kế đầy đủ các module: docs/database/ERD.md
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat        = "cjs"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserStatus {
+  INVITED
+  ACTIVE
+  LOCKED
+  DISABLED
+
+  @@map("user_status")
+}
+
+enum PermissionScope {
+  OWN
+  TEAM
+  STORE
+  ORG
+
+  @@map("permission_scope")
+}
+
+enum TeamMemberRole {
+  MEMBER
+  LEAD
+
+  @@map("team_member_role")
+}
+
+enum AccessEvent {
+  LOGIN_SUCCESS
+  LOGIN_FAILED
+  LOGOUT
+  MFA_SUCCESS
+  MFA_FAILED
+  PASSWORD_RESET_REQUESTED
+  PASSWORD_RESET_COMPLETED
+  SESSION_REVOKED
+  ACCOUNT_LOCKED
+  ACCOUNT_UNLOCKED
+
+  @@map("access_event")
+}
+
+model Organization {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  code      String   @unique @db.VarChar(32)
+  name      String   @db.VarChar(255)
+  timezone  String   @default("Asia/Ho_Chi_Minh") @db.VarChar(64)
+  currency  String   @default("VND") @db.Char(3)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  stores     Store[]
+  warehouses Warehouse[]
+  teams      Team[]
+  users      User[]
+  settings   SystemSetting[]
+
+  @@map("organizations")
+}
+
+model Store {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  code           String   @db.VarChar(32)
+  name           String   @db.VarChar(255)
+  address        String?  @db.VarChar(500)
+  phone          String?  @db.VarChar(20)
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  warehouses   Warehouse[]
+  teams        Team[]
+  users        User[]       @relation("UserPrimaryStore")
+  userRoles    UserRole[]
+
+  @@unique([organizationId, code])
+  @@map("stores")
+}
+
+model Warehouse {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  storeId        String?  @map("store_id") @db.Uuid
+  code           String   @db.VarChar(32)
+  name           String   @db.VarChar(255)
+  isMain         Boolean  @default(false) @map("is_main")
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  store        Store?       @relation(fields: [storeId], references: [id], onDelete: Restrict)
+
+  @@unique([organizationId, code])
+  @@map("warehouses")
+}
+
+model Team {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  storeId        String   @map("store_id") @db.Uuid
+  name           String   @db.VarChar(255)
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  store        Store        @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  members      TeamMember[]
+
+  @@unique([storeId, name])
+  @@map("teams")
+}
+
+model User {
+  id                String     @id @default(uuid(7)) @db.Uuid
+  organizationId    String     @map("organization_id") @db.Uuid
+  primaryStoreId    String?    @map("primary_store_id") @db.Uuid
+  /// Email lưu nguyên dạng nhập; unique không phân biệt hoa thường qua index lower(email).
+  email             String     @db.VarChar(320)
+  fullName          String     @map("full_name") @db.VarChar(255)
+  phone             String?    @db.VarChar(20)
+  employeeCode      String?    @map("employee_code") @db.VarChar(32)
+  /// Argon2id hash (Sprint 1). NULL khi tài khoản ở trạng thái INVITED.
+  passwordHash      String?    @map("password_hash") @db.Text
+  passwordChangedAt DateTime?  @map("password_changed_at") @db.Timestamptz(3)
+  status            UserStatus @default(INVITED)
+  failedLoginCount  Int        @default(0) @map("failed_login_count")
+  lockedUntil       DateTime?  @map("locked_until") @db.Timestamptz(3)
+  mfaEnabled        Boolean    @default(false) @map("mfa_enabled")
+  /// Bí mật TOTP đã mã hóa bằng khóa ứng dụng (AES-256-GCM), không bao giờ lưu plaintext.
+  mfaSecretEnc      String?    @map("mfa_secret_enc") @db.Text
+  lastLoginAt       DateTime?  @map("last_login_at") @db.Timestamptz(3)
+  version           Int        @default(1)
+  createdAt         DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  primaryStore Store?       @relation("UserPrimaryStore", fields: [primaryStoreId], references: [id], onDelete: Restrict)
+  teams        TeamMember[]
+  roles        UserRole[]   @relation("UserRoleUser")
+  rolesGranted UserRole[]   @relation("UserRoleGrantedBy")
+  sessions     Session[]
+
+  @@unique([organizationId, employeeCode])
+  @@map("users")
+}
+
+model TeamMember {
+  teamId   String         @map("team_id") @db.Uuid
+  userId   String         @map("user_id") @db.Uuid
+  role     TeamMemberRole @default(MEMBER)
+  joinedAt DateTime       @default(now()) @map("joined_at") @db.Timestamptz(3)
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@id([teamId, userId])
+  @@index([userId])
+  @@map("team_members")
+}
+
+model Role {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  /// Mã ổn định, khớp RoleCode trong @crm/shared đối với vai trò hệ thống.
+  code        String   @unique @db.VarChar(64)
+  name        String   @db.VarChar(255)
+  description String?  @db.Text
+  isSystem    Boolean  @default(false) @map("is_system")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  permissions RolePermission[]
+  users       UserRole[]
+
+  @@map("roles")
+}
+
+model Permission {
+  key          String  @id @db.VarChar(100)
+  module       String  @db.VarChar(50)
+  label        String  @db.VarChar(255)
+  scoped       Boolean
+  directorOnly Boolean @default(false) @map("director_only")
+  sensitive    Boolean @default(false)
+
+  roles RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId        String          @map("role_id") @db.Uuid
+  permissionKey String          @map("permission_key") @db.VarChar(100)
+  scope         PermissionScope
+  grantedAt     DateTime        @default(now()) @map("granted_at") @db.Timestamptz(3)
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionKey], references: [key], onDelete: Restrict)
+
+  @@id([roleId, permissionKey])
+  @@map("role_permissions")
+}
+
+/// Gán vai trò cho nhân viên, tùy chọn giới hạn ở một cửa hàng (store_id NULL = mọi cửa hàng).
+/// Unique (user_id, role_id, store_id) coi NULL là một giá trị: hai index partial trong migration SQL.
+model UserRole {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  roleId      String   @map("role_id") @db.Uuid
+  storeId     String?  @map("store_id") @db.Uuid
+  grantedById String?  @map("granted_by_id") @db.Uuid
+  grantedAt   DateTime @default(now()) @map("granted_at") @db.Timestamptz(3)
+
+  user      User   @relation("UserRoleUser", fields: [userId], references: [id], onDelete: Cascade)
+  role      Role   @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  store     Store? @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  grantedBy User?  @relation("UserRoleGrantedBy", fields: [grantedById], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@map("user_roles")
+}
+
+/// Phiên đăng nhập phía server. Chỉ lưu hash SHA-256 của token, không lưu token gốc.
+model Session {
+  id            String    @id @default(uuid(7)) @db.Uuid
+  userId        String    @map("user_id") @db.Uuid
+  tokenHash     String    @unique @map("token_hash") @db.Char(64)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  expiresAt     DateTime  @map("expires_at") @db.Timestamptz(3)
+  lastSeenAt    DateTime  @default(now()) @map("last_seen_at") @db.Timestamptz(3)
+  mfaVerifiedAt DateTime? @map("mfa_verified_at") @db.Timestamptz(3)
+  ip            String?   @db.Inet
+  userAgent     String?   @map("user_agent") @db.VarChar(500)
+  revokedAt     DateTime? @map("revoked_at") @db.Timestamptz(3)
+  revokedReason String?   @map("revoked_reason") @db.VarChar(255)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@map("sessions")
+}
+
+/// Nhật ký truy cập (đăng nhập/đăng xuất/MFA...). Append-only (trigger).
+model AccessLog {
+  id         BigInt      @id @default(autoincrement())
+  userId     String?     @map("user_id") @db.Uuid
+  /// Định danh đã nhập khi đăng nhập thất bại (không lưu mật khẩu).
+  identifier String?     @db.VarChar(320)
+  event      AccessEvent
+  ip         String?     @db.Inet
+  userAgent  String?     @map("user_agent") @db.VarChar(500)
+  metadata   Json?
+  createdAt  DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+  @@map("access_logs")
+}
+
+/// Nhật ký hành động nghiệp vụ. Append-only: trigger chặn UPDATE/DELETE.
+model AuditLog {
+  id             BigInt   @id @default(autoincrement())
+  organizationId String?  @map("organization_id") @db.Uuid
+  actorUserId    String?  @map("actor_user_id") @db.Uuid
+  action         String   @db.VarChar(100)
+  entityType     String   @map("entity_type") @db.VarChar(100)
+  entityId       String?  @map("entity_id") @db.VarChar(100)
+  before         Json?
+  after          Json?
+  reason         String?  @db.Text
+  requestId      String?  @map("request_id") @db.VarChar(100)
+  ip             String?  @db.Inet
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([entityType, entityId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+/// Chống tạo trùng cho thao tác tiền/kho/đơn (header Idempotency-Key).
+model IdempotencyKey {
+  scope          String    @db.VarChar(150)
+  key            String    @db.VarChar(255)
+  requestHash    String    @map("request_hash") @db.Char(64)
+  responseStatus Int?      @map("response_status")
+  responseBody   Json?     @map("response_body")
+  lockedAt       DateTime? @map("locked_at") @db.Timestamptz(3)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  expiresAt      DateTime  @map("expires_at") @db.Timestamptz(3)
+
+  @@id([scope, key])
+  @@index([expiresAt])
+  @@map("idempotency_keys")
+}
+
+/// Cấu hình nghiệp vụ có phiên bản (ví dụ: thời hạn hiệu lực phê duyệt giá, ngưỡng tồn thấp).
+model SystemSetting {
+  organizationId String   @map("organization_id") @db.Uuid
+  key            String   @db.VarChar(100)
+  value          Json
+  version        Int      @default(1)
+  updatedById    String?  @map("updated_by_id") @db.Uuid
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@id([organizationId, key])
+  @@map("system_settings")
+}
+
+/// Transactional outbox cho background job (BullMQ) — sự kiện ghi cùng transaction nghiệp vụ.
+model OutboxEvent {
+  id          BigInt    @id @default(autoincrement())
+  type        String    @db.VarChar(100)
+  payload     Json
+  attempts    Int       @default(0)
+  availableAt DateTime  @default(now()) @map("available_at") @db.Timestamptz(3)
+  processedAt DateTime? @map("processed_at") @db.Timestamptz(3)
+  lastError   String?   @map("last_error") @db.Text
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([processedAt, availableAt])
+  @@map("outbox_events")
+}

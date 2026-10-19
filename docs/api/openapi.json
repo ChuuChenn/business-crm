@@ -1,0 +1,53 @@
+{
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "operationId": "HealthController_live_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "API đang chạy"
+          }
+        },
+        "summary": "Liveness: tiến trình API đang chạy",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/api/v1/health/ready": {
+      "get": {
+        "operationId": "HealthController_ready_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Mọi phụ thuộc hoạt động"
+          },
+          "503": {
+            "description": "Ít nhất một phụ thuộc không hoạt động"
+          }
+        },
+        "summary": "Readiness: kết nối PostgreSQL và Redis",
+        "tags": [
+          "health"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Business CRM API",
+    "description": "REST API của Business CRM. Quy ước: docs/api/API_CONVENTIONS.md",
+    "version": "0.1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "components": {
+    "schemas": {}
+  }
+}

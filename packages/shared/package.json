@@ -1,0 +1,32 @@
+{
+  "name": "@crm/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Định nghĩa nghiệp vụ dùng chung: vai trò, quyền, state machine, tiền tệ, thời gian, schema API",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "gen:docs": "pnpm build && node scripts/generate-docs.mjs"
+  },
+  "dependencies": {
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@crm/config": "workspace:*",
+    "@types/node": "22.20.5",
+    "eslint": "9.39.5",
+    "typescript": "5.9.3",
+    "vitest": "4.1.12"
+  }
+}
